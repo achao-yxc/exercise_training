@@ -2,9 +2,6 @@ const mongoose = require('../db/mongodb')
 const { Schema } = mongoose
 
 const RouteSchema = new Schema({
-  // _id: {
-  //   type: Schema.Types.ObjectId,
-  // },
   routeName: {
     type: String,
     trim: true,
@@ -30,11 +27,11 @@ const RouteSchema = new Schema({
   idPath: {
     type: String,
   },
-})
+}, { timestamps: true })
 
-RouteSchema.add({
-  children: [RouteSchema]
-})
+// RouteSchema.add({
+//   children: [RouteSchema]
+// })
 
 const Route = mongoose.model('Route', RouteSchema, 'route')
 

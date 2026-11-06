@@ -1,6 +1,7 @@
 // 引入mongoose并连接数据库
 const mongoose = require('mongoose')
 mongoose.connect('mongodb://localhost:27017/exercise',{
+  // family: 4  // 强制使用 IPv4
   // useNewUrlParser: true,
   // useCreateIndex: true,
   // useUnifiedTopology: true,
@@ -42,7 +43,8 @@ module.exports = mongoose
  * db.xx.insert({"label": "value"})
  * 
  * 删除集合中数据
- * db.user.remove()
+ * db.user.deleteOne({})
+ * db.user.deleteMany({})
  * 
  * 删除集合
  * db.user.drop()
