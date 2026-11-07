@@ -79,7 +79,7 @@ router.post('/add', async (req, res) => {
 
 router.post('/list', async (req, res) => {
   // const data = await Route.find().lean()
-  const data2 = await Route.find().skip(2).lean()
+  const data2 = await Route.find().lean()
   const map = new Map()
   data2.forEach(item => {
     map.set(item._id.toString(), { ...item, children: [] })
