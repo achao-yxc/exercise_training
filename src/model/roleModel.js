@@ -10,15 +10,7 @@ const RoleSchema = new Schema({
     // ref: 'Route'
     type: Array,
   },
-  createTime: {
-    type: Date,
-    default: Date.now
-  },
-  updateTime: {
-    type: Date,
-    default: Date.now
-  }
-})
+}, { timestamps: true })
 
 const Role = mongoose.model('Role', RoleSchema, 'role')
 module.exports = Role

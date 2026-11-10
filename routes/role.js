@@ -1,14 +1,24 @@
 const express = require('express')
 const router = express.Router()
 const roleModel = require('../src/model/roleModel')
+const dayjs = require('dayjs')
 
 // 获取列表
 router.post('/list', async (req, res, next) => {
-  const allData = await roleModel.find({})
-  const total = allData.length
   const { pageNo, pageSize, roleName } = req.body
+  // const allData = await roleModel.find({})
+  // const total = allData.length
+  const total = await roleModel.countDocuments({ roleName: new RegExp(roleName, 'i') })
   const skip = (pageNo - 1) * pageSize
-  const data = await roleModel.find({ roleName: new RegExp(roleName, 'i') }).skip(skip).limit(pageSize)
+  const result = await roleModel.find({ roleName: new RegExp(roleName, 'i') }).skip(skip).limit(pageSize).lean()
+  const data = result.map(item => {
+    const { createdAt, updatedAt } = item
+    return {
+      ...item,
+      createTime: createdAt ? dayjs(createdAt).format('YYYY-MM-DD HH:mm:ss') : '',
+      updateTime: updatedAt ? dayjs(updatedAt).format('YYYY-MM-DD HH:mm:ss') : ''
+    }
+  })
   res.send({ code: 200, msg: '获取成功', data, total })
 })
 

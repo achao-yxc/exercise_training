@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const Route = require('../src/model/routeModel')
 // const mongoose = require('../src/db/mongodb')
+const dayjs = require('dayjs')
 
 // const getRoute = async (allData, parentId) => {
 //   let result = null
@@ -79,13 +80,19 @@ router.post('/add', async (req, res) => {
 
 router.post('/list', async (req, res) => {
   // const data = await Route.find().lean()
-  const data2 = await Route.find().lean()
+  const result = await Route.find().lean()
   const map = new Map()
-  data2.forEach(item => {
-    map.set(item._id.toString(), { ...item, children: [] })
+  result.forEach(item => {
+    const { createdAt, updatedAt } = item
+    map.set(item._id.toString(), { 
+      ...item, 
+      children: [],
+      createTime: createdAt ? dayjs(createdAt).format('YYYY-MM-DD HH:mm:ss') : '',
+      updateTime: updatedAt ? dayjs(updatedAt).format('YYYY-MM-DD HH:mm:ss') : ''
+    })
   })
   const tree = []
-  data2.forEach(item => {
+  result.forEach(item => {
     const node = map.get(item._id.toString())
     if (!item.parentId || item.parentId == 'root') {
       tree.push(node)
