@@ -1,6 +1,8 @@
 var express = require('express');
 var router = express.Router();
 const userModel = require('../src/model/userModel')
+const roleModel = require('../src/model/roleModel')
+const routeModel = require('../src/model/routeModel')
 const dayjs = require('dayjs')
 
 /* GET users listing. */
@@ -11,13 +13,58 @@ router.get('/', function(req, res, next) {
 // 用户登录
 router.post('/login', async (req, res) => {
   const { username, password } = req.body
-  const result = await userModel.find({ 'username': username, 'password': password })
-  if (result.length > 0) {
-    res.send({ code: 200, msg: '登录成功', data: result[0] })
-  }
-  else {
-    res.send({ code: 500, msg: '登录失败，请检查账号密码', data: null })
-  }
+  // const data = await userModel.aggregate([
+  //   { $match: { username, password } },
+  //   {
+  //     $lookup: {
+  //       from: 'role',
+  //       let: { rIds: "$roleIds" }, // 把 user 的 roleIds 定义为变量
+  //       pipeline: [
+  //         {
+  //           $match: {
+  //             $expr: {
+  //               // 把 role 的 _id 转为字符串，看是否在 rIds 数组中
+  //               $in: [ { $toString: "$_id" }, "$$rIds" ]
+  //             }
+  //           }
+  //         },
+  //         {
+  //           $lookup: {
+  //             from: 'route',
+  //             let: { routeIds: "$routeIds" },
+  //             pipeline: [
+  //               {
+  //                 $match: {
+  //                   $expr: {
+  //                     $in: [ { $toString: "$_id" }, "$$routeIds" ]
+  //                   }
+  //                 }
+  //               }
+  //             ],
+  //             as: 'routes'
+  //           }
+  //         }
+  //       ],
+  //       as: 'roles'
+  //     }
+  //   }
+  // ])
+
+  const user = await userModel.findOne({ username, password }).lean()
+  if (!user) return res.send({ code: 500, msg: '登录失败，请检查账号密码' })
+  else if (!user.roleIds || user.roleIds.length == 0) return res.send({ code: 200, msg: '用户未分配角色', data: user })
+  
+  const roles = await roleModel.find({ _id: { $in: user.roleIds } }).lean()
+  let allRouteIds = []
+  roles.forEach(role => {
+    if (role.routeIds && role.routeIds.length > 0) {
+      allRouteIds.push(...role.routeIds)
+    }
+  })
+  allRouteIds = [...new Set(allRouteIds)]
+  if (allRouteIds.length == 0) return res.send({ code: 200, msg: '用户未分配路由', data: user })
+  const routes = await routeModel.find({ _id: { $in: allRouteIds } }).lean()
+  res.send({ code: 200, msg: '登录成功', data: {...user, roles, routes} })
 })
 
 // 用户注册
