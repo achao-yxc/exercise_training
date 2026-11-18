@@ -23,8 +23,8 @@ router.post('/list', async (req, res, next) => {
 })
 
 router.post('/add', async (req, res) => {
-  const { roleName, routeIds } = req.body
-  const newRole = new roleModel({ roleName, routeIds })
+  const { roleName, routeIds, routeHalfIds } = req.body
+  const newRole = new roleModel({ roleName, routeIds, routeHalfIds })
   const data = await newRole.save()
   res.send({ code: 200, msg: '保存成功', data })
 })
@@ -36,8 +36,8 @@ router.get('/detail', async (req, res, next) => {
 })
 // 更新
 router.post('/updateOne', async (req, res, next) => {
-  const { _id, roleName, routeIds } = req.body
-  const data = await roleModel.updateOne({ _id }, { roleName, routeIds })
+  const { _id, roleName, routeIds, routeHalfIds } = req.body
+  const data = await roleModel.updateOne({ _id }, { roleName, routeIds, routeHalfIds })
   res.send({ code: 200, msg: '保存成功', data })
 })
 // 删除单条记录

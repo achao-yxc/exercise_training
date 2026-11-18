@@ -43,6 +43,7 @@ const UserSchema = mongoose.Schema({
     default: '123',
     trim: true,
   },
+  nickname: { type: String, trim: true },
   age: {
     type: Number,
     default: 0
@@ -59,14 +60,7 @@ const UserSchema = mongoose.Schema({
   roleIds: {
     type: Array,
   },
-  // createTime: {
-  //   type: Date,
-  //   default: Date.now
-  // },
-  // updateTime: {
-  //   type: Date,
-  //   default: Date.now
-  // }
+  description: { type: String, trim: true }
 }, { timestamps: true })
 // 静态方法
 // UserSchema.statics.findByUid = (uid, callback) => {

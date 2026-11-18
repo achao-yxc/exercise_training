@@ -1,9 +1,10 @@
-var express = require('express');
-var router = express.Router();
+const express = require('express')
+const router = express.Router()
 const userModel = require('../src/model/userModel')
 const roleModel = require('../src/model/roleModel')
 const routeModel = require('../src/model/routeModel')
 const dayjs = require('dayjs')
+// const mongoose = require('mongoose')
 
 /* GET users listing. */
 router.get('/', function(req, res, next) {
@@ -54,20 +55,21 @@ router.post('/login', async (req, res) => {
   const user = await userModel.findOne({ username, password }).lean()
   if (!user) return res.send({ code: 500, msg: '登录失败，请检查账号密码' })
   else if (!user.roleIds || user.roleIds.length == 0) return res.send({ code: 200, msg: '用户未分配角色', data: user })
-  // 查询 roles
-  const roles = await roleModel.find({ _id: { $in: user.roleIds } }).lean()
-  // 收集所有 role 的 routeIds 并去重
-  let allRouteIds = []
-  roles.forEach(role => {
-    if (role.routeIds && role.routeIds.length > 0) {
-      allRouteIds.push(...role.routeIds)
-    }
-  })
-  // 去重
-  allRouteIds = [...new Set(allRouteIds)]
-  if (allRouteIds.length == 0) return res.send({ code: 200, msg: '用户未分配路由', data: user })
-  const routes = await routeModel.find({ _id: { $in: allRouteIds } }).lean()
-  res.send({ code: 200, msg: '登录成功', data: {...user, roles, routes} })
+  res.send({ code: 200, msg: '登录成功', data: user })
+  // // 查询 roles
+  // const roles = await roleModel.find({ _id: { $in: user.roleIds } }).lean()
+  // // 收集所有 role 的 routeIds 并去重
+  // let allRouteIds = []
+  // roles.forEach(role => {
+  //   if (role.routeIds && role.routeIds.length > 0) {
+  //     allRouteIds.push(...role.routeIds)
+  //   }
+  // })
+  // // 去重
+  // allRouteIds = [...new Set(allRouteIds)]
+  // if (allRouteIds.length == 0) return res.send({ code: 200, msg: '用户未分配路由', data: user })
+  // const routes = await routeModel.find({ _id: { $in: allRouteIds } }).lean()
+  // res.send({ code: 200, msg: '登录成功', data: {...user, roles, routes} })
 })
 
 // 用户注册
@@ -77,6 +79,28 @@ router.post('/login', async (req, res) => {
 //     password: req.body.password
 //   })
 //   res.send(user)
+// })
+
+// 用户权限路由
+// router.get('/routes', async (req, res) => {
+//   const { userId } = req.query
+//   const user = await userModel.findOne({ _id: userId })
+//   if (!user) return res.send({ code: 500, msg: '用户不存在' })
+//   else if (!user.roleIds || user.roleIds.length == 0) return res.send({ code: 200, msg: '用户未分配角色', data: user })
+//   // 查询 roles
+//   const roles = await roleModel.find({ _id: { $in: user.roleIds } }).lean()
+//   // 收集所有 role 的 routeIds 并去重
+//   let allRouteIds = []
+//   roles.forEach(role => {
+//     if (role.routeIds && role.routeIds.length > 0) {
+//       allRouteIds.push(...role.routeIds)
+//     }
+//   })
+//   // 去重
+//   allRouteIds = [...new Set(allRouteIds)]
+//   if (allRouteIds.length == 0) return res.send({ code: 200, msg: '用户未分配路由', data: user })
+//   const routes = await routeModel.find({ _id: { $in: allRouteIds } }).lean()
+//   res.send({ code: 200, msg: '获取成功', data: routes })
 // })
 
 // 获取用户列表
@@ -112,7 +136,7 @@ router.post('/list', async (req, res, next) => {
 })
 // 新增
 router.post('/add', async (req, res, next) => {
-  const { username, age, status, gender, roleIds } = req.body
+  const { username, age, status, gender, roleIds, nickname } = req.body
 
   const newuser = new userModel({
     username, age, status, gender, roleIds
@@ -122,12 +146,19 @@ router.post('/add', async (req, res, next) => {
   // 自定义实例方法
   // newuser.print()
 })
-// 更新
+
+/**
+ * 更新
+*/
 router.post('/updateOne', async (req, res, next) => {
-  const { _id, username, age, status, gender, roleIds } = req.body
-  const data = await userModel.updateOne({ _id }, { username, age, status, gender, roleIds })
-  res.send({ code: 200, msg: '保存成功', data })
+  const { _id, username, age, status, gender, roleIds, nickname } = req.body
+  const { modifiedCount } = await userModel.updateOne({ _id }, { username, age, status, gender, roleIds, nickname })
+  if (modifiedCount == 1) {
+    const data = await userModel.findOne({ _id }).lean()
+    res.send({ code: 200, msg: '保存成功', data })
+  }
 })
+
 // 删除单条记录
 router.post('/deleteOne', async (req, res, next) => {
   const { _id } = req.body

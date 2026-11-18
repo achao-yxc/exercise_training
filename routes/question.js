@@ -8,14 +8,15 @@ const subjectModel = require('../src/model/subjectModel')
 router.post('/list', async (req, res, next) => {
   const { pageNo, pageSize, questionName, subjectId } = req.body
   const total = await questionModel.countDocuments({
-    questionName: new RegExp(questionName, 'i'), 
-    subjectId: new RegExp(subjectId, 'i') 
+    questionName: new RegExp(questionName, 'i'),
+    subjectId: new RegExp(subjectId, 'i')
   })
   const skip = (pageNo - 1) * pageSize
   const result = await questionModel.find({
-    questionName: new RegExp(questionName, 'i'), 
-    subjectId: new RegExp(subjectId, 'i') 
+    questionName: new RegExp(questionName, 'i'),
+    subjectId: new RegExp(subjectId, 'i')
   })
+  .sort({ createdAt: -1 })
   .skip(skip)
   .limit(pageSize)
   

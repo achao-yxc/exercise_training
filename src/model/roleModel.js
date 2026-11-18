@@ -6,10 +6,9 @@ const RoleSchema = new Schema({
     trim: true,
   },
   routeIds: {
-    // type: Schema.Types.ObjectId,
-    // ref: 'Route'
     type: Array,
   },
+  routeHalfIds: { type: Array },
 }, { timestamps: true })
 
 const Role = mongoose.model('Role', RoleSchema, 'role')
