@@ -4,6 +4,8 @@ const userModel = require('../src/model/userModel')
 const roleModel = require('../src/model/roleModel')
 const routeModel = require('../src/model/routeModel')
 const dayjs = require('dayjs')
+const jwt = require('jsonwebtoken')
+const SECRET_KEY = 'tokenSecretKey'
 // const mongoose = require('mongoose')
 
 /* GET users listing. */
@@ -51,11 +53,22 @@ router.post('/login', async (req, res) => {
   //   }
   // ])
 
-  // 查询 user
+  // 校验密码
   const user = await userModel.findOne({ username, password }).lean()
-  if (!user) return res.send({ code: 500, msg: '登录失败，请检查账号密码' })
-  else if (!user.roleIds || user.roleIds.length == 0) return res.send({ code: 200, msg: '用户未分配角色', data: user })
-  res.send({ code: 200, msg: '登录成功', data: user })
+  if (user) {
+    const { username, password, _id } = user
+    const token = jwt.sign(
+      { account: { username, password, userId: _id } },
+      SECRET_KEY,
+      { expiresIn: '1h' }
+    )
+    res.send({ code: 200, msg: '登录成功', data: { user, token } })
+  }
+  else {
+    res.send({ code: 500, msg: '登录失败，请检查账号密码' })
+  }
+  // else if (!user.roleIds || user.roleIds.length == 0) return res.send({ code: 200, msg: '用户未分配角色', data: user })
+  
   // // 查询 roles
   // const roles = await roleModel.find({ _id: { $in: user.roleIds } }).lean()
   // // 收集所有 role 的 routeIds 并去重
@@ -79,28 +92,6 @@ router.post('/login', async (req, res) => {
 //     password: req.body.password
 //   })
 //   res.send(user)
-// })
-
-// 用户权限路由
-// router.get('/routes', async (req, res) => {
-//   const { userId } = req.query
-//   const user = await userModel.findOne({ _id: userId })
-//   if (!user) return res.send({ code: 500, msg: '用户不存在' })
-//   else if (!user.roleIds || user.roleIds.length == 0) return res.send({ code: 200, msg: '用户未分配角色', data: user })
-//   // 查询 roles
-//   const roles = await roleModel.find({ _id: { $in: user.roleIds } }).lean()
-//   // 收集所有 role 的 routeIds 并去重
-//   let allRouteIds = []
-//   roles.forEach(role => {
-//     if (role.routeIds && role.routeIds.length > 0) {
-//       allRouteIds.push(...role.routeIds)
-//     }
-//   })
-//   // 去重
-//   allRouteIds = [...new Set(allRouteIds)]
-//   if (allRouteIds.length == 0) return res.send({ code: 200, msg: '用户未分配路由', data: user })
-//   const routes = await routeModel.find({ _id: { $in: allRouteIds } }).lean()
-//   res.send({ code: 200, msg: '获取成功', data: routes })
 // })
 
 // 获取用户列表
