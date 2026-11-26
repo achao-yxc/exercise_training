@@ -1,5 +1,5 @@
 const mongoose = require('../db/mongodb')
-// const bcrypt = require('bcrypt')
+const bcrypt = require('bcrypt')
 // // 建立用户表
 // const UserSchema = new mongoose.Schema({
 //   username: {
@@ -22,14 +22,6 @@ const mongoose = require('../db/mongodb')
 //     },
 //     select: false
 //   },
-//   createTime: {
-//     type: Date,
-//     default: Date.now
-//   },
-//   updateTime: {
-//     type: Date,
-//     default: Date.now
-//   }
 // })
 
 // 定义数据集合映射，每个schema会映射到mongodb的一个collection，不具备操作数据库的能力
@@ -62,16 +54,35 @@ const UserSchema = mongoose.Schema({
   },
   description: { type: String, trim: true }
 }, { timestamps: true })
+
+UserSchema.pre('save', function (next) {
+  const isMedPwd = this.isModified('password')
+  console.log('Modified password: ', isMedPwd)
+  next()
+  // if (!isMedPwd) return next()
+  // try {
+  //   this.password = bcrypt.hashSync(this.password, 10)
+  //   next()
+  // } catch (err) {
+  //   next(err)
+  // }
+})
+
 // 静态方法
 // UserSchema.statics.findByUid = (uid, callback) => {
 //   this.find({"_id": uid}, (err, docs) => {
 //     callback(err, docs)
 //   })
 // }
-// 实例方法
-// UserSchema.methods.print = () => {
-//   console.log(this)
-// }
+
+/**
+ * 实例方法 密码校验
+ * @param {*} pwd 
+ * @returns 
+ */
+UserSchema.methods.comparePwd = function (pwd) {
+  return bcrypt.compare(pwd, this.password)
+}
 
 // 定义数据库模型，操作数据库
 // 参数1，模型名称，首字母大写，User对应数据库集合users

@@ -1,3 +1,4 @@
+require('dotenv').config()
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
@@ -5,7 +6,6 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
 var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
 
 var app = express();
 
@@ -22,12 +22,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 
 const { expressjwt } = require('express-jwt')
-const SECRET_KEY = 'tokenSecretKey'
+// const { SECRET_KEY } = require('./config.js')
 // 中间件校验token，解析JWT字符串
 // unless 排除无需校验的路由
 app.use(
   expressjwt({
-    secret: SECRET_KEY,
+    secret: process.env.SECRET_KEY,
     algorithms: ['HS256'], // 使用何种加密算法解析
   })
   .unless({
@@ -36,10 +36,11 @@ app.use(
 )
 
 app.use((req, res, next) => {
-  console.log(req.auth)
+  // console.log(req.auth)
   next()
 })
 
+var usersRouter = require('./routes/users')
 app.use('/users', usersRouter)
 const routeRouter = require('./routes/route')
 app.use('/route', routeRouter)

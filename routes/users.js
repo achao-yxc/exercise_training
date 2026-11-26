@@ -5,8 +5,11 @@ const roleModel = require('../src/model/roleModel')
 const routeModel = require('../src/model/routeModel')
 const dayjs = require('dayjs')
 const jwt = require('jsonwebtoken')
-const SECRET_KEY = 'tokenSecretKey'
 // const mongoose = require('mongoose')
+// const { SECRET_KEY, expiresIn, privateKey } = require('../config')
+const crypto = require('crypto')
+// var node_rsa = require('node-rsa').default
+const bcrypt = require('bcrypt')
 
 /* GET users listing. */
 router.get('/', function(req, res, next) {
@@ -15,7 +18,7 @@ router.get('/', function(req, res, next) {
 
 // 用户登录
 router.post('/login', async (req, res) => {
-  const { username, password } = req.body
+  const { username: Username, password: Password } = req.body
   // const data = await userModel.aggregate([
   //   { $match: { username, password } },
   //   {
@@ -53,36 +56,36 @@ router.post('/login', async (req, res) => {
   //   }
   // ])
 
-  // 校验密码
-  const user = await userModel.findOne({ username, password }).lean()
-  if (user) {
-    const { username, password, _id } = user
+  // 校验密码 todo 账号是否停用
+  const user = await userModel.findOne({ username: Username })
+  if (!user) return res.send({ code: 404, msg: '找不到该用户' })
+
+  // 1. 将 Base64 字符串转为 Buffer
+  const encryptedBuffer = Buffer.from(Password, 'base64')
+  // 2. 调用 privateDecrypt，关键是指定 RSA_PKCS1_PADDING
+  const decryptor = crypto.privateDecrypt(
+    { key: process.env.PRIVATE_KEY, padding: crypto.constants.RSA_PKCS1_PADDING },// 对齐 JSEncrypt
+    encryptedBuffer
+  )
+  // 3. 将解密结果转为 UTF-8 字符串
+  const result = decryptor.toString('utf-8')
+  // console.log(result)
+  const { username, password, _id } = user
+  // console.log(password)
+  const pwdResult = await user.comparePwd(result, password)
+  if (pwdResult) {
     const token = jwt.sign(
       { account: { username, password, userId: _id } },
-      SECRET_KEY,
-      { expiresIn: '1h' }
+      process.env.SECRET_KEY,
+      { expiresIn: process.env.EXPIRES_IN }
     )
     res.send({ code: 200, msg: '登录成功', data: { user, token } })
   }
   else {
     res.send({ code: 500, msg: '登录失败，请检查账号密码' })
   }
+
   // else if (!user.roleIds || user.roleIds.length == 0) return res.send({ code: 200, msg: '用户未分配角色', data: user })
-  
-  // // 查询 roles
-  // const roles = await roleModel.find({ _id: { $in: user.roleIds } }).lean()
-  // // 收集所有 role 的 routeIds 并去重
-  // let allRouteIds = []
-  // roles.forEach(role => {
-  //   if (role.routeIds && role.routeIds.length > 0) {
-  //     allRouteIds.push(...role.routeIds)
-  //   }
-  // })
-  // // 去重
-  // allRouteIds = [...new Set(allRouteIds)]
-  // if (allRouteIds.length == 0) return res.send({ code: 200, msg: '用户未分配路由', data: user })
-  // const routes = await routeModel.find({ _id: { $in: allRouteIds } }).lean()
-  // res.send({ code: 200, msg: '登录成功', data: {...user, roles, routes} })
 })
 
 // 用户注册
@@ -129,8 +132,9 @@ router.post('/list', async (req, res, next) => {
 router.post('/add', async (req, res, next) => {
   const { username, age, status, gender, roleIds, nickname } = req.body
 
+  const password = bcrypt.hashSync('123', 10)
   const newuser = new userModel({
-    username, age, status, gender, roleIds
+    username, age, status, gender, roleIds, nickname, password
   })
   const data = await newuser.save()
   res.send({ code: 200, msg: '保存成功', data })
